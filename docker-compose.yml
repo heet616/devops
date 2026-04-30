@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+  ingestion-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SERVICE: ingestion_service
+      PORT: "8001"
+      ANALYSIS_URL: http://analysis-service:8002
+    ports:
+      - "80:8001"
+    depends_on:
+      - analysis-service
+    mem_limit: 128m
+    restart: unless-stopped
+
+  analysis-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SERVICE: analysis_service
+      PORT: "8002"
+      DASHBOARD_URL: http://dashboard-service:8003
+    depends_on:
+      - dashboard-service
+    mem_limit: 128m
+    restart: unless-stopped
+
+  dashboard-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SERVICE: dashboard_service
+      PORT: "8003"
+    ports:
+      - "8003:8003"
+    mem_limit: 128m
+    restart: unless-stopped
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    ports:
+      - "8080:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    mem_limit: 160m
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    mem_limit: 128m
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    mem_limit: 128m
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:
+  grafana_data:
