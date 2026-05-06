@@ -1,7 +1,7 @@
 FROM grafana/grafana:latest
 
 # Copy the provisioning config
-COPY ./grafana/provisioning/dashboards.yaml /etc/grafana/provisioning/dashboards/dashboards.yaml
+COPY ./grafana/provisioning/dashboards/dashboards.yaml /etc/grafana/provisioning/dashboards/dashboards.yaml
 
 # Copy the actual dashboard JSON file(s) to a SAFE path
 COPY ./grafana/dashboards /etc/grafana/dashboards
