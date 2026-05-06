@@ -7,7 +7,7 @@ This repository is a small, production-style demo that shows how to:
 - stream alerts to a simple dashboard feed,
 - run everything in containers with monitoring,
 - deploy the stack to a low-cost EC2 instance,
-- validate code quality in CI with tests and SonarCloud.
+- validate code quality in CI with tests.
 
 The overall theme is a health-tech telemetry pipeline, built with three FastAPI services, Prometheus metrics, and a Jenkins CI/CD pipeline.
 
@@ -16,7 +16,7 @@ The overall theme is a health-tech telemetry pipeline, built with three FastAPI 
 - Analysis Service: evaluates alert rules and sends alerts to Dashboard.
 - Dashboard Service: receives alerts and streams them to clients via server-sent events (SSE).
 - Observability: Prometheus scrapes metrics from each service. Grafana visualizes them.
-- CI/CD: Jenkins runs tests, scans with SonarCloud, and deploys the stack via Docker Compose.
+- CI/CD: Jenkins runs tests and deploys the stack via Docker Compose.
 - Infra: Terraform provisions an EC2 instance and security group on AWS.
 
 ## Services and Responsibilities
@@ -70,12 +70,7 @@ Key behavior:
 The Jenkins pipeline performs:
 1. Checkout
 2. Test: installs dependencies and runs `pytest`
-3. SonarCloud scan and quality gate
-4. Deploy: runs `docker compose up -d --build`
-
-The pipeline expects:
-- a SonarCloud token stored in Jenkins as `SONAR_TOKEN`.
-- project key and organization in both Jenkinsfile and `sonar-project.properties`.
+3. Deploy: runs `docker compose up -d --build`
 
 ## Containerization and Runtime
 - One Dockerfile builds a base Python image and runs any service based on the `SERVICE` env var.
@@ -105,8 +100,7 @@ Outputs:
 - `Dockerfile`: builds the Python runtime and selects the service to run.
 - `prometheus.yml`: tells Prometheus where to scrape metrics.
 - `requirements.txt`: Python dependencies for the services and tests.
-- `Jenkinsfile`: pipeline for test, quality gate, and deployment.
-- `sonar-project.properties`: SonarCloud configuration.
+- `Jenkinsfile`: pipeline for test and deployment.
 - `infra/*.tf`: Terraform configuration for AWS resources.
 
 ## Testing

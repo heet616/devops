@@ -5,7 +5,6 @@
 - AWS account with Free Tier access
 - Terraform >= 1.5
 - Docker and Docker Compose (local dev)
-- SonarCloud account (public project)
 - Git
 
 ## Repository Layout
@@ -18,16 +17,7 @@
 - `prometheus.yml` Prometheus config
 - `Jenkinsfile` CI/CD pipeline
 
-## 1) Configure SonarCloud
-
-1. Create a public project in SonarCloud.
-2. Note your organization key and project key.
-3. Update these values in:
-   - `Jenkinsfile`: `SONAR_PROJECT_KEY`, `SONAR_ORGANIZATION`
-   - `sonar-project.properties`: `sonar.projectKey`, `sonar.organization`
-4. In Jenkins, create a secret text credential with ID `SONAR_TOKEN`.
-
-## 2) Provision the EC2 Instance (Terraform)
+## 1) Provision the EC2 Instance (Terraform)
 
 1. Create an EC2 key pair and note the key name.
 2. From the `infra/` directory:
@@ -39,20 +29,20 @@ terraform apply -var="key_name=YOUR_KEYPAIR_NAME"
 
 3. Capture the public IP from Terraform output.
 
-## 3) Connect to the Instance
+## 2) Connect to the Instance
 
 ```bash
 ssh -i /path/to/your-key.pem ubuntu@YOUR_PUBLIC_IP
 ```
 
-## 4) Clone the Repo on the EC2 Instance
+## 3) Clone the Repo on the EC2 Instance
 
 ```bash
 git clone YOUR_REPO_URL
 cd REPO_FOLDER
 ```
 
-## 5) Run the Stack with Docker Compose
+## 4) Run the Stack with Docker Compose
 
 ```bash
 docker compose up -d --build
@@ -65,7 +55,7 @@ docker compose up -d --build
 - Grafana: `http://YOUR_PUBLIC_IP:3000`
 - Prometheus: `http://YOUR_PUBLIC_IP:9090`
 
-## 6) Configure Jenkins
+## 5) Configure Jenkins
 
 1. Open Jenkins, finish the initial setup, and install suggested plugins.
 2. Ensure Docker is accessible to Jenkins:
@@ -75,10 +65,9 @@ sudo usermod -aG docker jenkins
 sudo systemctl restart jenkins
 ```
 
-3. Add a secret text credential with ID `SONAR_TOKEN`.
-4. Create a Pipeline job pointing at your repo and set it to use `Jenkinsfile`.
+3. Create a Pipeline job pointing at your repo and set it to use `Jenkinsfile`.
 
-## 7) Test the Ingestion Flow
+## 6) Test the Ingestion Flow
 
 ```bash
 curl -X POST http://YOUR_PUBLIC_IP/api/v1/vitals \
@@ -92,7 +81,7 @@ You should see an alert in the dashboard stream:
 curl http://YOUR_PUBLIC_IP:8003/stream
 ```
 
-## 8) Local Development (Optional)
+## 7) Local Development (Optional)
 
 ```bash
 python -m venv .venv

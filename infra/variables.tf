@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region to deploy into"
   type        = string
-  default     = "us-east-1"
+  default     = "eu-north-1."
 }
 
 variable "instance_type" {
@@ -11,7 +11,7 @@ variable "instance_type" {
 }
 
 variable "key_name" {
-  description = "Existing EC2 key pair name"
+  description = "devops_key"
   type        = string
 }
 

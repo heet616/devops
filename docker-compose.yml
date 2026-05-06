@@ -42,12 +42,15 @@ services:
     restart: unless-stopped
 
   jenkins:
-    image: jenkins/jenkins:lts
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
     ports:
       - "8080:8080"
     volumes:
       - jenkins_home:/var/jenkins_home
-    mem_limit: 160m
+      - /var/run/docker.sock:/var/run/docker.sock
+    mem_limit: 1g 
     restart: unless-stopped
 
   prometheus:
