@@ -53,13 +53,13 @@ services:
       - health_network
 
   grafana:
-    image: grafana/grafana:latest
+    # Remove the image: grafana/grafana:latest line
+    build: 
+      context: .
+      dockerfile: Dockerfile.grafana
     ports:
       - "3001:3000"
-    environment:
-      - GF_SECURITY_ALLOW_EMBEDDING=true
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    # ONLY keep volumes for persistent data, REMOVE the ones for dashboards/provisioning
     volumes:
       - grafana_storage:/var/lib/grafana
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards

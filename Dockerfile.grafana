@@ -1,0 +1,7 @@
+FROM grafana/grafana:latest
+
+# Copy the provisioning config
+COPY ./grafana/provisioning/dashboards.yaml /etc/grafana/provisioning/dashboards/dashboards.yaml
+
+# Copy the actual dashboard JSON file(s)
+COPY ./grafana/dashboards /var/lib/grafana/dashboards
