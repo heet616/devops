@@ -1,12 +1,12 @@
 pipeline {
     agent any
+    
     stages {
         stage('Build & Deploy') {
             steps {
                 echo 'Launching MedIoT Stack...'
-                // We run compose directly. Compose will look for 'ingestion_service/' 
-                // relative to the docker-compose.yml file it just found in the repo.
-                sh 'docker compose down --remove-orphans'
+                // Removed the --remove-orphans flag
+                sh 'docker compose down'
                 sh 'docker compose up -d --build'
             }
         }
