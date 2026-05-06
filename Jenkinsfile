@@ -6,8 +6,8 @@ pipeline {
             steps {
                 echo 'Launching MedIoT Stack...'
                 // Removed the --remove-orphans flag
-                sh 'docker compose down'
-                sh 'docker compose up -d --build'
+                sh 'docker-compose down'
+                sh 'docker-compose up -d --build'
             }
         }
         
