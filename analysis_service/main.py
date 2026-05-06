@@ -81,7 +81,7 @@ async def analyze(payload: VitalsPayload):
 
     async with httpx.AsyncClient(timeout=5.0) as client:
         try:
-            response = await client.post(f"{DASHBOARD_URL}/alerts", json=alert.model_dump())
+            response = await client.post(f"{DASHBOARD_URL}/alerts", json=alert.model_dump(mode='json'))
             response.raise_for_status()
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail=f"dashboard service error: {exc}")
