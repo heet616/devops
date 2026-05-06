@@ -9,13 +9,24 @@ pipeline {
 
     stage('Test') {
       steps {
-        sh 'python -m pip install --upgrade pip --break-system-packages'
-        sh 'pip install -r requirements.txt'
-        sh 'pytest -q'
+        sh '''
+          # 1. Create a virtual environment
+          python3 -m venv venv
+          
+          # 2. Use the pip inside the venv to install requirements
+          ./venv/bin/pip install --upgrade pip
+          ./venv/bin/pip install -r requirements.txt
+          
+          # 3. Run pytest using the venv's python
+          ./venv/bin/python -m pytest -q
+        '''
       }
     }
+
     stage('Deploy') {
       steps {
+        // This requires the 'jenkins' user to have permission 
+        // to use /var/run/docker.sock
         sh 'docker compose up -d --build'
       }
     }
