@@ -22,6 +22,16 @@ REQUEST_LATENCY = Histogram(
     ["service", "method", "path"],
 )
 
+PATIENT_HEART_RATE = Gauge(
+    "patient_heart_rate", 
+    "Current Heart Rate of the patient", 
+    ["patient_id"]
+)
+PATIENT_SPO2 = Gauge(
+    "patient_spo2", 
+    "Current SpO2 level of the patient", 
+    ["patient_id"]
+)
 
 class VitalsPayload(BaseModel):
     patient_id: str = Field(..., min_length=1)
@@ -50,6 +60,10 @@ async def metrics():
 
 @app.post("/api/v1/vitals")
 async def ingest_vitals(payload: VitalsPayload):
+    # 2. Record the values into Prometheus
+    PATIENT_HEART_RATE.labels(patient_id=payload.patient_id).set(payload.heart_rate)
+    PATIENT_SPO2.labels(patient_id=payload.patient_id).set(payload.spo2)
+
     async with httpx.AsyncClient(timeout=5.0) as client:
         try:
             response = await client.post(f"{ANALYSIS_URL}/analyze", json=payload.model_dump(mode='json'))
