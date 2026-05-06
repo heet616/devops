@@ -41,24 +41,12 @@ services:
     mem_limit: 128m
     restart: unless-stopped
 
-  jenkins:
+  prometheus:
     build:
       context: .
-      dockerfile: Dockerfile.jenkins
-    ports:
-      - "8080:8080"
-    volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-    mem_limit: 1g 
-    restart: unless-stopped
-
-  prometheus:
-    image: prom/prometheus:latest
+      dockerfile: Dockerfile.prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
       - "9090:9090"
     mem_limit: 128m
@@ -74,5 +62,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  jenkins_home:
   grafana_data:
