@@ -52,7 +52,7 @@ async def metrics():
 async def ingest_vitals(payload: VitalsPayload):
     async with httpx.AsyncClient(timeout=5.0) as client:
         try:
-            response = await client.post(f"{ANALYSIS_URL}/analyze", json=payload.model_dump())
+            response = await client.post(f"{ANALYSIS_URL}/analyze", json=payload.model_dump(mode='json'))
             response.raise_for_status()
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail=f"analysis service error: {exc}")
