@@ -1,17 +1,24 @@
-version: "3.8"
+version: '3.8'
 
 services:
   jenkins:
-    build:
-      context: .
-      dockerfile: Dockerfile.jenkins
+    image: jenkins/jenkins:lts
+    privileged: true
+    user: root
+    container_name: jenkins-master
     ports:
       - "8080:8080"
+      - "50000:50000"
     volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-    mem_limit: 1g 
-    restart: unless-stopped
+      - jenkins_data:/var/lib/jenkins            # Persists your jobs and plugins
+      - /var/run/docker.sock:/var/run/docker.sock # Allows Jenkins to control Docker
+      - /usr/bin/docker:/usr/bin/docker           # Maps the docker command
+    networks:
+      - health_network
+
+networks:
+  health_network:
+    driver: bridge
 
 volumes:
-  jenkins_home:
+  jenkins_data:  # THIS IS THE MISSING PIECE

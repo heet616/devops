@@ -1,14 +1,22 @@
 import asyncio
 import json
-from datetime import datetime
 from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 
-app = FastAPI(title="Dashboard Service", version="1.0.0")
+app = FastAPI(title="Dashboard Service", version="2.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 ALERT_QUEUE: "asyncio.Queue[dict]" = asyncio.Queue()
 SERVICE_NAME = "dashboard_service"
@@ -24,13 +32,13 @@ REQUEST_LATENCY = Histogram(
     ["service", "method", "path"],
 )
 
-
 class AlertPayload(BaseModel):
     alert_id: str
-    patient_id: str = Field(..., min_length=1)
-    trigger_reason: str
-    vitals_snapshot: dict
-
+    patient_id: str
+    sensor_type: str
+    severity: str
+    message: str
+    timestamp: str
 
 @app.middleware("http")
 async def metrics_middleware(request, call_next):
@@ -44,17 +52,14 @@ async def metrics_middleware(request, call_next):
     ).inc()
     return response
 
-
 @app.get("/metrics")
 async def metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
-
 @app.post("/alerts")
 async def receive_alert(payload: AlertPayload):
-    await ALERT_QUEUE.put(payload.model_dump())
+    await ALERT_QUEUE.put(payload.model_dump(mode="json"))
     return {"status": "received"}
-
 
 async def stream_alerts(request: Request) -> AsyncGenerator[str, None]:
     while True:
@@ -62,7 +67,6 @@ async def stream_alerts(request: Request) -> AsyncGenerator[str, None]:
             break
         alert = await ALERT_QUEUE.get()
         yield f"data: {json.dumps(alert)}\n\n"
-
 
 @app.get("/stream")
 async def stream(request: Request):

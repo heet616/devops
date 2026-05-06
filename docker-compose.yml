@@ -1,65 +1,95 @@
 version: "3.8"
 
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - health_network
+    depends_on:
+      - ingestion-service
+
   ingestion-service:
     build:
-      context: .
+      context: ./ingestion_service
       dockerfile: Dockerfile
-    environment:
-      SERVICE: ingestion_service
-      PORT: "8001"
-      ANALYSIS_URL: http://analysis-service:8002
     ports:
-      - "80:8001"
-    depends_on:
-      - analysis-service
-    mem_limit: 128m
-    restart: unless-stopped
+      - "8000:8000"
+    volumes:
+      - sqlite_storage:/data
+    environment:
+      - ANALYSIS_URL=http://analysis-service:8002
+      - DB_PATH=/data/healthtech.db
+    networks:
+      - health_network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   analysis-service:
     build:
-      context: .
+      context: ./analysis_service
       dockerfile: Dockerfile
-    environment:
-      SERVICE: analysis_service
-      PORT: "8002"
-      DASHBOARD_URL: http://dashboard-service:8003
-    depends_on:
-      - dashboard-service
-    mem_limit: 128m
-    restart: unless-stopped
-
-  dashboard-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      SERVICE: dashboard_service
-      PORT: "8003"
     ports:
-      - "8003:8003"
-    mem_limit: 128m
-    restart: unless-stopped
+      - "8002:8002"
+    networks:
+      - health_network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   prometheus:
     build:
       context: .
       dockerfile: Dockerfile.prometheus
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
     ports:
       - "9090:9090"
-    mem_limit: 128m
-    restart: unless-stopped
+    networks:
+      - health_network
 
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3000:3000"
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
     volumes:
-      - grafana_data:/var/lib/grafana
-    mem_limit: 128m
-    restart: unless-stopped
+      - grafana_storage:/var/lib/grafana
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboards:/var/lib/grafana/dashboards  # Add this line
+    networks:
+      - health_network
+
+  dashboard-service:
+    build:
+      context: ./dashboard_service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - SERVICE_NAME=dashboard_service
+      - PYTHONUNBUFFERED=1
+    networks:
+      - health_network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
 volumes:
-  grafana_data:
+  sqlite_storage:
+    driver: local
+  grafana_storage:
+    driver: local
+
+networks:
+  health_network:
+    driver: bridge
