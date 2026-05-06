@@ -4,7 +4,7 @@ from datetime import datetime
 import httpx
 from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel, Field
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram,Gauge, generate_latest
 
 app = FastAPI(title="Ingestion Service", version="1.0.0")
 
