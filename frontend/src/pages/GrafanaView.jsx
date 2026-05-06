@@ -12,6 +12,8 @@ export default function GrafanaView() {
   const now = Date.now()
   const from = now - 30 * 60 * 1000   // last 30 min
   const to   = now
+  const dashboardUid = 'mediot_main_dashboard'
+  const dashboardSlug = 'mediot-analytics'
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
@@ -22,7 +24,7 @@ export default function GrafanaView() {
           <p className="text-slate-500 text-sm mt-1">Embedded metric dashboards — last 30 minutes</p>
         </div>
         <a
-          href={GRAFANA_BASE}
+          href={`${GRAFANA_BASE}/d/${dashboardUid}/${dashboardSlug}`}
           target="_blank"
           rel="noreferrer"
           className="flex items-center gap-2 px-4 py-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-sm font-medium hover:bg-cyan-500/20 transition-all"
@@ -42,7 +44,7 @@ export default function GrafanaView() {
           </span>
         </div>
         <iframe
-          src={`${GRAFANA_BASE}?orgId=1&from=${from}&to=${to}&theme=dark&kiosk=tv`}
+          src={`${GRAFANA_BASE}/d/${dashboardUid}/${dashboardSlug}?orgId=1&from=${from}&to=${to}&theme=dark&kiosk=tv`}
           className="w-full"
           style={{ height: 'calc(100% - 45px)', border: 'none' }}
           title="Grafana Main Dashboard"
@@ -59,7 +61,7 @@ export default function GrafanaView() {
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-800">
                 <span className="text-xs font-medium text-slate-400">{panel.title}</span>
                 <a
-                  href={`${GRAFANA_BASE}/d-solo?orgId=1&panelId=${panel.panelId}&from=${from}&to=${to}&theme=dark`}
+                  href={`${GRAFANA_BASE}/d-solo/${dashboardUid}/${dashboardSlug}?orgId=1&panelId=${panel.panelId}&from=${from}&to=${to}&theme=dark`}
                   target="_blank" rel="noreferrer"
                   className="text-slate-600 hover:text-cyan-400 transition-colors"
                 >
@@ -67,7 +69,7 @@ export default function GrafanaView() {
                 </a>
               </div>
               <iframe
-                src={`${GRAFANA_BASE}/d-solo?orgId=1&panelId=${panel.panelId}&from=${from}&to=${to}&theme=dark`}
+                src={`${GRAFANA_BASE}/d-solo/${dashboardUid}/${dashboardSlug}?orgId=1&panelId=${panel.panelId}&from=${from}&to=${to}&theme=dark`}
                 className="w-full"
                 style={{ height: 'calc(100% - 41px)', border: 'none' }}
                 title={panel.title}

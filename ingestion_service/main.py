@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 from datetime import datetime
 import aiosqlite
 import httpx
@@ -85,6 +86,7 @@ async def startup_event():
 # --- CLINICAL API ENDPOINTS ---
 @app.post("/api/v1/vitals", status_code=status.HTTP_201_CREATED)
 async def ingest_vitals(payload: VitalsPayload):
+    start_time = time.perf_counter()
     HTTP_REQUESTS_TOTAL.labels(method="POST", path="/api/v1/vitals", status="201").inc()
     
     # Track the value inside the Prometheus Gauge engine
@@ -110,6 +112,7 @@ async def ingest_vitals(payload: VitalsPayload):
         except httpx.HTTPError as exc:
             logger.error(f"Failed to transmit data to downstream analytics node: {exc}")
             
+    VITAL_LATENCY_HISTOGRAM.observe(time.perf_counter() - start_time)
     return {"status": "persisted_and_forwarded"}
 
 @app.post("/api/v1/alerts", status_code=status.HTTP_201_CREATED)
