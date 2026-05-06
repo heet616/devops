@@ -9,7 +9,7 @@ pipeline {
 
     stage('Test') {
       steps {
-        sh 'python -m pip install --upgrade pip'
+        sh 'python -m pip install --upgrade pip --break-system-packages'
         sh 'pip install -r requirements.txt'
         sh 'pytest -q'
       }
