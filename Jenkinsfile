@@ -73,8 +73,8 @@ if ! command -v docker &> /dev/null; then
             break
         fi
     done
-    sudo apt-get update -y
-    sudo apt-get install -y docker.io docker-compose
+    sudo apt-get -o DPkg::Lock::Timeout=120 update -y
+    sudo apt-get -o DPkg::Lock::Timeout=120 install -y docker.io docker-compose
     sudo usermod -aG docker ubuntu
     # Fix socket permissions for the current user
     sudo chmod 666 /var/run/docker.sock
