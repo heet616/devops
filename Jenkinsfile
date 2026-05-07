@@ -52,61 +52,61 @@ pipeline {
             def appPublicIp = sh(script: 'cd infra && "${TF_BIN}" output -raw app_public_ip', returnStdout: true).trim()
             def monitoringPublicIp = sh(script: 'cd infra && "${TF_BIN}" output -raw monitoring_public_ip', returnStdout: true).trim()
 
-            sh """
-                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY_PATH} ubuntu@${appPublicIp} <<'EOF'
-                    set -e
-                    
-                    # 1. Install Docker & Docker Compose if missing
-                    if ! command -v docker &> /dev/null; then
-                        echo "Installing Docker..."
-                                                sudo systemctl stop apt-daily.service apt-daily-upgrade.service || true
-                                                sudo systemctl stop apt-daily.timer apt-daily-upgrade.timer || true
-                                                sudo systemctl kill --kill-who=all apt-daily.service apt-daily-upgrade.service || true
-                                                for i in \$(seq 1 40); do
-                                                    if sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1 || \
-                                                         sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || \
-                                                         sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || \
-                                                         sudo fuser /var/cache/apt/archives/lock >/dev/null 2>&1; then
-                                                        echo "Waiting for apt locks..."
-                                                        sleep 3
-                                                    else
-                                                        break
-                                                    fi
-                                                done
-                        sudo apt-get update -y
-                        sudo apt-get install -y docker.io docker-compose
-                        sudo usermod -aG docker ubuntu
-                        # Fix socket permissions for the current user
-                        sudo chmod 666 /var/run/docker.sock
-                    fi
+                        sh """
+                                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY_PATH} ubuntu@${appPublicIp} <<'EOF'
+set -e
 
-                    # 2. Setup Directory
-                    if [ ! -d /opt/healthtech ]; then
-                        sudo mkdir -p /opt/healthtech
-                        sudo chown ubuntu:ubuntu /opt/healthtech
-                    fi
-                    
-                    cd /opt/healthtech
-                    
-                    # 3. Clone or Update Repo
-                    if [ ! -d devops ]; then
-                        git clone ${REPO_URL} devops
-                    else
-                        cd devops && git pull && cd ..
-                    fi
-                    
-                    cd devops
+# 1. Install Docker & Docker Compose if missing
+if ! command -v docker &> /dev/null; then
+    echo "Installing Docker..."
+    sudo systemctl stop apt-daily.service apt-daily-upgrade.service || true
+    sudo systemctl stop apt-daily.timer apt-daily-upgrade.timer || true
+    sudo systemctl kill --kill-who=all apt-daily.service apt-daily-upgrade.service || true
+    for i in \$(seq 1 40); do
+        if sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1 || \
+             sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || \
+             sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || \
+             sudo fuser /var/cache/apt/archives/lock >/dev/null 2>&1; then
+            echo "Waiting for apt locks..."
+            sleep 3
+        else
+            break
+        fi
+    done
+    sudo apt-get update -y
+    sudo apt-get install -y docker.io docker-compose
+    sudo usermod -aG docker ubuntu
+    # Fix socket permissions for the current user
+    sudo chmod 666 /var/run/docker.sock
+fi
 
-                    # 4. Create .env file
-                    cat > .env <<ENV
+# 2. Setup Directory
+if [ ! -d /opt/healthtech ]; then
+    sudo mkdir -p /opt/healthtech
+    sudo chown ubuntu:ubuntu /opt/healthtech
+fi
+
+cd /opt/healthtech
+
+# 3. Clone or Update Repo
+if [ ! -d devops ]; then
+    git clone ${REPO_URL} devops
+else
+    cd devops && git pull && cd ..
+fi
+
+cd devops
+
+# 4. Create .env file
+cat > .env <<ENV
 VITE_API_BASE=http://${appPublicIp}:8000
 VITE_GRAFANA_BASE=http://${monitoringPublicIp}:3001
 ENV
 
-                    # 5. Deploy
-                    docker-compose -f docker-compose.app.yml up -d --build
-                EOF
-            """
+# 5. Deploy
+docker-compose -f docker-compose.app.yml up -d --build
+EOF
+                        """
         }
     }
 }
@@ -117,19 +117,19 @@ ENV
                             def appPrivateIp = sh(script: 'cd infra && "${TF_BIN}" output -raw app_private_ip', returnStdout: true).trim()
                             def monitoringPublicIp = sh(script: 'cd infra && "${TF_BIN}" output -raw monitoring_public_ip', returnStdout: true).trim()
 
-                                        sh """
-                                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY_PATH} ubuntu@${monitoringPublicIp} <<'EOF'
-                                                set -e
-                                                if [ ! -d /opt/healthtech ]; then
-                                                    sudo mkdir -p /opt/healthtech
-                                                    sudo chown ubuntu:ubuntu /opt/healthtech
-                                                fi
-                                                cd /opt/healthtech
-                                                if [ ! -d devops ]; then
-                                                    git clone ${REPO_URL} devops
-                                                fi
-                                                cd devops
-                                                cat > prometheus.yml <<PROM
+                                                                                sh """
+                                                                                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY_PATH} ubuntu@${monitoringPublicIp} <<'EOF'
+set -e
+if [ ! -d /opt/healthtech ]; then
+    sudo mkdir -p /opt/healthtech
+    sudo chown ubuntu:ubuntu /opt/healthtech
+fi
+cd /opt/healthtech
+if [ ! -d devops ]; then
+    git clone ${REPO_URL} devops
+fi
+cd devops
+cat > prometheus.yml <<PROM
 global:
     scrape_interval: 5s
     evaluation_interval: 5s
@@ -143,9 +143,9 @@ scrape_configs:
         static_configs:
             - targets: ['${appPrivateIp}:8002']
 PROM
-                                                docker compose -f docker-compose.monitoring.yml up -d --build
-                                            EOF
-                                        """
+docker compose -f docker-compose.monitoring.yml up -d --build
+EOF
+                                                                                """
                                 }
                         }
                 }
