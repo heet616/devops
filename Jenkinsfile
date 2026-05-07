@@ -24,10 +24,15 @@ pipeline {
 
                 stage('Provision Infrastructure') {
             steps {
+                withCredentials([
+                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
                                 dir('infra') {
                             sh '"${TF_BIN}" init'
                             sh '"${TF_BIN}" apply -auto-approve -var="key_name=${KEY_NAME}" -var="allowed_ssh_cidr=${ALLOWED_SSH_CIDR}"'
                                 }
+                }
             }
         }
 
