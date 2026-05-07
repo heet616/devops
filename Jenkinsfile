@@ -40,7 +40,7 @@ pipeline {
             }
         }
 
-                sstage('Deploy App Stack') {
+                stage('Deploy App Stack') {
     steps {
         script {
             def appPublicIp = sh(script: 'cd infra && "${TF_BIN}" output -raw app_public_ip', returnStdout: true).trim()
