@@ -75,13 +75,6 @@ resource "aws_security_group" "app_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    description     = "Service APIs (Prometheus scrape)"
-    from_port       = 8000
-    to_port         = 8003
-    protocol        = "tcp"
-    security_groups = [aws_security_group.monitoring_sg.id]
-  }
 
   egress {
     from_port   = 0
@@ -116,13 +109,6 @@ resource "aws_security_group" "monitoring_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    description     = "Prometheus (from app)"
-    from_port       = 9090
-    to_port         = 9090
-    protocol        = "tcp"
-    security_groups = [aws_security_group.app_sg.id]
-  }
 
   ingress {
     description = "Prometheus (admin access)"
@@ -175,6 +161,26 @@ resource "aws_security_group" "jenkins_sg" {
   tags = {
     Name = "healthtech-jenkins-sg"
   }
+}
+
+resource "aws_security_group_rule" "allow_monitoring_to_app" {
+  type                     = "ingress"
+  from_port                = 8000
+  to_port                  = 8003
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.app_sg.id
+  source_security_group_id = aws_security_group.monitoring_sg.id
+  description              = "Service APIs (Prometheus scrape)"
+}
+
+resource "aws_security_group_rule" "allow_app_to_monitoring" {
+  type                     = "ingress"
+  from_port                = 9090
+  to_port                  = 9090
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.monitoring_sg.id
+  source_security_group_id = aws_security_group.app_sg.id
+  description              = "Prometheus (from app)"
 }
 
 locals {
