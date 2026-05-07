@@ -74,7 +74,7 @@ if ! command -v docker &> /dev/null; then
         fi
     done
     sudo apt-get -o DPkg::Lock::Timeout=120 update -y
-    sudo apt-get -o DPkg::Lock::Timeout=120 install -y docker.io docker-compose
+    sudo apt-get -o DPkg::Lock::Timeout=120 install -y docker.io docker-compose-plugin
     sudo usermod -aG docker ubuntu
     # Fix socket permissions for the current user
     sudo chmod 666 /var/run/docker.sock
@@ -104,7 +104,7 @@ VITE_GRAFANA_BASE=http://${monitoringPublicIp}:3001
 ENV
 
 # 5. Deploy
-docker-compose -f docker-compose.app.yml up -d --build
+docker compose -f docker-compose.app.yml up -d --build
 EOF
                         """
         }
