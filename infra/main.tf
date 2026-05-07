@@ -27,9 +27,21 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-resource "aws_security_group" "healthtech_sg" {
-  name        = "healthtech-microservices-sg"
-  description = "Allow SSH, API, Jenkins, Grafana"
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+resource "aws_security_group" "app_sg" {
+  name        = "healthtech-app-sg"
+  description = "App node: frontend + services"
+  vpc_id      = data.aws_vpc.default.id
 
   ingress {
     description = "SSH"
@@ -40,25 +52,115 @@ resource "aws_security_group" "healthtech_sg" {
   }
 
   ingress {
-    description = "API"
-    from_port   = 80
-    to_port     = 80
+    description = "Frontend"
+    from_port   = 3000
+    to_port     = 3000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    description = "Jenkins"
-    from_port   = 8080
-    to_port     = 8080
+    description = "Ingestion API"
+    from_port   = 8000
+    to_port     = 8000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Dashboard stream"
+    from_port   = 8003
+    to_port     = 8003
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description     = "Service APIs (Prometheus scrape)"
+    from_port       = 8000
+    to_port         = 8003
+    protocol        = "tcp"
+    security_groups = [aws_security_group.monitoring_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "healthtech-app-sg"
+  }
+}
+
+resource "aws_security_group" "monitoring_sg" {
+  name        = "healthtech-monitoring-sg"
+  description = "Monitoring node: Grafana + Prometheus"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_ssh_cidr]
   }
 
   ingress {
     description = "Grafana"
-    from_port   = 3000
-    to_port     = 3000
+    from_port   = 3001
+    to_port     = 3001
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description     = "Prometheus (from app)"
+    from_port       = 9090
+    to_port         = 9090
+    protocol        = "tcp"
+    security_groups = [aws_security_group.app_sg.id]
+  }
+
+  ingress {
+    description = "Prometheus (admin access)"
+    from_port   = 9090
+    to_port     = 9090
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_ssh_cidr]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "healthtech-monitoring-sg"
+  }
+}
+
+resource "aws_security_group" "jenkins_sg" {
+  name        = "healthtech-jenkins-sg"
+  description = "Jenkins node"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_ssh_cidr]
+  }
+
+  ingress {
+    description = "Jenkins UI"
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -71,16 +173,11 @@ resource "aws_security_group" "healthtech_sg" {
   }
 
   tags = {
-    Name = "healthtech-microservices-sg"
+    Name = "healthtech-jenkins-sg"
   }
 }
 
-resource "aws_instance" "healthtech" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.instance_type
-  key_name               = var.key_name
-  vpc_security_group_ids = [aws_security_group.healthtech_sg.id]
-
+locals {
   user_data = <<-EOF
               #!/bin/bash
               set -e
@@ -110,7 +207,24 @@ resource "aws_instance" "healthtech" {
               sudo systemctl start docker
               EOF
 
+  sg_by_role = {
+    app        = aws_security_group.app_sg.id
+    monitoring = aws_security_group.monitoring_sg.id
+    jenkins    = aws_security_group.jenkins_sg.id
+  }
+}
+
+resource "aws_instance" "healthtech" {
+  for_each               = var.instances
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = each.value.instance_type
+  key_name               = var.key_name
+  subnet_id              = tolist(data.aws_subnets.default.ids)[0]
+  vpc_security_group_ids = [local.sg_by_role[each.key]]
+  user_data              = local.user_data
+
   tags = {
-    Name = "healthtech-microservices"
+    Name = "healthtech-${each.key}"
+    Role = each.key
   }
 }

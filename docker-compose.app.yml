@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: ${VITE_API_BASE}
+        VITE_GRAFANA_BASE: ${VITE_GRAFANA_BASE}
+    ports:
+      - "3000:3000"
+    networks:
+      - app_network
+    depends_on:
+      - ingestion-service
+
+  ingestion-service:
+    build:
+      context: ./ingestion_service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - sqlite_storage:/data
+    environment:
+      - ANALYSIS_URL=http://analysis-service:8002
+      - DB_PATH=/data/healthtech.db
+    networks:
+      - app_network
+
+  analysis-service:
+    build:
+      context: ./analysis_service
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    networks:
+      - app_network
+
+  dashboard-service:
+    build:
+      context: ./dashboard_service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - SERVICE_NAME=dashboard_service
+      - PYTHONUNBUFFERED=1
+    networks:
+      - app_network
+
+volumes:
+  sqlite_storage:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge

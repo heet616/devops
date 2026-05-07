@@ -3,6 +3,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+ARG VITE_API_BASE
+ARG VITE_GRAFANA_BASE
+ENV VITE_API_BASE=$VITE_API_BASE
+ENV VITE_GRAFANA_BASE=$VITE_GRAFANA_BASE
 RUN npm run build
 
 FROM nginx:alpine AS runtime
