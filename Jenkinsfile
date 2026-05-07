@@ -59,15 +59,20 @@ pipeline {
                     # 1. Install Docker & Docker Compose if missing
                     if ! command -v docker &> /dev/null; then
                         echo "Installing Docker..."
-                        sudo systemctl stop apt-daily.service apt-daily-upgrade.service || true
-                        sudo systemctl kill --kill-who=all apt-daily.service apt-daily-upgrade.service || true
-                        while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1 || \
-                            sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || \
-                            sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || \
-                            sudo fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do
-                          echo "Waiting for apt locks..."
-                          sleep 3
-                        done
+                                                sudo systemctl stop apt-daily.service apt-daily-upgrade.service || true
+                                                sudo systemctl stop apt-daily.timer apt-daily-upgrade.timer || true
+                                                sudo systemctl kill --kill-who=all apt-daily.service apt-daily-upgrade.service || true
+                                                for i in $(seq 1 40); do
+                                                    if sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1 || \
+                                                         sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || \
+                                                         sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || \
+                                                         sudo fuser /var/cache/apt/archives/lock >/dev/null 2>&1; then
+                                                        echo "Waiting for apt locks..."
+                                                        sleep 3
+                                                    else
+                                                        break
+                                                    fi
+                                                done
                         sudo apt-get update -y
                         sudo apt-get install -y docker.io docker-compose
                         sudo usermod -aG docker ubuntu
