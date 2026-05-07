@@ -17,6 +17,9 @@ pipeline {
                 AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
                 AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
                 AWS_DEFAULT_REGION = "${params.AWS_REGION}"
+                APP_SG_ID = "${params.APP_SG_ID}"
+                MONITORING_SG_ID = "${params.MONITORING_SG_ID}"
+                JENKINS_SG_ID = "${params.JENKINS_SG_ID}"
             }
 
     stages {

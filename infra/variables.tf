@@ -37,14 +37,26 @@ variable "instances" {
 variable "app_sg_id" {
   description = "Existing security group ID for app instance"
   type        = string
+  validation {
+    condition     = length(var.app_sg_id) > 0
+    error_message = "app_sg_id must be provided."
+  }
 }
 
 variable "monitoring_sg_id" {
   description = "Existing security group ID for monitoring instance"
   type        = string
+  validation {
+    condition     = length(var.monitoring_sg_id) > 0
+    error_message = "monitoring_sg_id must be provided."
+  }
 }
 
 variable "jenkins_sg_id" {
   description = "Existing security group ID for Jenkins instance"
   type        = string
+  validation {
+    condition     = length(var.jenkins_sg_id) > 0
+    error_message = "jenkins_sg_id must be provided."
+  }
 }
