@@ -6,10 +6,14 @@ pipeline {
                 string(name: 'SSH_KEY_PATH', defaultValue: '/var/jenkins_home/.ssh/devops_key.pem', description: 'Path to EC2 SSH private key on Jenkins host')
                 string(name: 'KEY_NAME', defaultValue: 'devops_key', description: 'EC2 key pair name (Terraform var)')
                 string(name: 'ALLOWED_SSH_CIDR', defaultValue: '0.0.0.0/0', description: 'CIDR allowed to SSH (Terraform var)')
+                string(name: 'AWS_REGION', defaultValue: 'eu-north-1', description: 'AWS region for Terraform')
         }
 
             environment {
                 TF_BIN = "${WORKSPACE}/.tools/terraform/terraform"
+                AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+                AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+                AWS_DEFAULT_REGION = "${params.AWS_REGION}"
             }
 
     stages {
@@ -30,7 +34,7 @@ pipeline {
                 ]) {
                                 dir('infra') {
                             sh '"${TF_BIN}" init'
-                            sh '"${TF_BIN}" apply -auto-approve -var="key_name=${KEY_NAME}" -var="allowed_ssh_cidr=${ALLOWED_SSH_CIDR}"'
+                                    sh '"${TF_BIN}" apply -auto-approve -var="key_name=${KEY_NAME}" -var="allowed_ssh_cidr=${ALLOWED_SSH_CIDR}" -var="aws_region=${AWS_REGION}"'
                                 }
                 }
             }
