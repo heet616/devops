@@ -10,6 +10,7 @@ pipeline {
                 string(name: 'APP_SG_ID', defaultValue: 'sg-0deab94e46ffaa747', description: 'Existing app security group ID')
                 string(name: 'MONITORING_SG_ID', defaultValue: 'sg-03aba78cf3cb97dd0', description: 'Existing monitoring security group ID')
                 string(name: 'JENKINS_SG_ID', defaultValue: 'sg-0e7f7ed73d7da51ed', description: 'Existing Jenkins security group ID')
+                booleanParam(name: 'SKIP_TF_APPLY', defaultValue: false, description: 'Skip Terraform apply to reuse existing instances')
         }
 
             environment {
@@ -33,6 +34,9 @@ pipeline {
                 }
 
                 stage('Provision Infrastructure') {
+            when {
+                expression { return !params.SKIP_TF_APPLY }
+            }
             steps {
                 withCredentials([
                     string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
@@ -74,7 +78,14 @@ if ! command -v docker &> /dev/null; then
         fi
     done
     sudo apt-get -o DPkg::Lock::Timeout=120 update -y
-    sudo apt-get -o DPkg::Lock::Timeout=120 install -y docker.io docker-compose-plugin
+    sudo apt-get -o DPkg::Lock::Timeout=120 remove -y docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc || true
+    sudo apt-get -o DPkg::Lock::Timeout=120 install -y ca-certificates curl gnupg lsb-release
+    sudo install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    sudo chmod a+r /etc/apt/keyrings/docker.gpg
+    echo "deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt-get -o DPkg::Lock::Timeout=120 update -y
+    sudo apt-get -o DPkg::Lock::Timeout=120 install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
     sudo usermod -aG docker ubuntu
     # Fix socket permissions for the current user
     sudo chmod 666 /var/run/docker.sock
