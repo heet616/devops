@@ -40,34 +40,56 @@ pipeline {
             }
         }
 
-                stage('Deploy App Stack') {
-            steps {
-                script {
-                                        def appPublicIp = sh(script: 'cd infra && "${TF_BIN}" output -raw app_public_ip', returnStdout: true).trim()
-                                        def monitoringPublicIp = sh(script: 'cd infra && "${TF_BIN}" output -raw monitoring_public_ip', returnStdout: true).trim()
+                sstage('Deploy App Stack') {
+    steps {
+        script {
+            def appPublicIp = sh(script: 'cd infra && "${TF_BIN}" output -raw app_public_ip', returnStdout: true).trim()
+            def monitoringPublicIp = sh(script: 'cd infra && "${TF_BIN}" output -raw monitoring_public_ip', returnStdout: true).trim()
 
-                                        sh """
-                                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY_PATH} ubuntu@${appPublicIp} <<'EOF'
-                                                set -e
-                                                if [ ! -d /opt/healthtech ]; then
-                                                    sudo mkdir -p /opt/healthtech
-                                                    sudo chown ubuntu:ubuntu /opt/healthtech
-                                                fi
-                                                cd /opt/healthtech
-                                                if [ ! -d devops ]; then
-                                                    git clone ${REPO_URL} devops
-                                                fi
-                                                cd devops
-                                                cat > .env <<ENV
+            sh """
+                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY_PATH} ubuntu@${appPublicIp} <<'EOF'
+                    set -e
+                    
+                    # 1. Install Docker & Docker Compose if missing
+                    if ! command -v docker &> /dev/null; then
+                        echo "Installing Docker..."
+                        sudo apt-get update
+                        sudo apt-get install -y docker.io docker-compose
+                        sudo usermod -aG docker ubuntu
+                        # Fix socket permissions for the current user
+                        sudo chmod 666 /var/run/docker.sock
+                    fi
+
+                    # 2. Setup Directory
+                    if [ ! -d /opt/healthtech ]; then
+                        sudo mkdir -p /opt/healthtech
+                        sudo chown ubuntu:ubuntu /opt/healthtech
+                    fi
+                    
+                    cd /opt/healthtech
+                    
+                    # 3. Clone or Update Repo
+                    if [ ! -d devops ]; then
+                        git clone ${REPO_URL} devops
+                    else
+                        cd devops && git pull && cd ..
+                    fi
+                    
+                    cd devops
+
+                    # 4. Create .env file
+                    cat > .env <<ENV
 VITE_API_BASE=http://${appPublicIp}:8000
 VITE_GRAFANA_BASE=http://${monitoringPublicIp}:3001
 ENV
-                                                docker compose -f docker-compose.app.yml up -d --build
-                                            EOF
-                                        """
-                }
-            }
+
+                    # 5. Deploy
+                    docker-compose -f docker-compose.app.yml up -d --build
+                EOF
+            """
         }
+    }
+}
 
                 stage('Deploy Monitoring Stack') {
                         steps {
