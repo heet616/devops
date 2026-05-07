@@ -112,6 +112,7 @@ cd devops
 cat > .env <<ENV
 VITE_API_BASE=http://${appPublicIp}:8000
 VITE_GRAFANA_BASE=http://${monitoringPublicIp}:3001
+VITE_PROMETHEUS_BASE=http://${monitoringPublicIp}:9090
 ENV
 
 # 5. Deploy

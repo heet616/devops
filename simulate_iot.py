@@ -3,7 +3,7 @@ import random
 import requests
 from datetime import datetime, timezone
 
-API_URL = "http://localhost:8000/api/v1/vitals"
+API_URL = "http://16.171.149.222:8000/api/v1/vitals"
 
 PATIENTS = ["patient_001", "patient_002", "patient_003"]
 SENSORS = [

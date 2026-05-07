@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { CheckCircle2, XCircle, AlertCircle, RefreshCw, Activity, Clock, Server } from 'lucide-react'
-import { API_BASE, GRAFANA_BASE } from '../config'
+import { API_BASE, ANALYSIS_BASE, DASHBOARD_BASE, GRAFANA_BASE, PROMETHEUS_BASE } from '../config'
 import { useToast } from '../context/ToastContext'
-
-const PROMETHEUS_BASE = import.meta.env.VITE_PROMETHEUS_BASE || 'http://localhost:9090'
 
 // Individual service health checks
 const SERVICES = [
   { name: 'Ingestion Service',  url: `${API_BASE}/metrics`,         label: 'FastAPI',    port: '8000' },
-  { name: 'Analysis Service',   url: 'http://localhost:8002/metrics', label: 'FastAPI',   port: '8002' },
-  { name: 'Dashboard Service',  url: 'http://localhost:8003/metrics', label: 'FastAPI',   port: '8003' },
+  { name: 'Analysis Service',   url: `${ANALYSIS_BASE}/metrics`,     label: 'FastAPI',    port: '8002' },
+  { name: 'Dashboard Service',  url: `${DASHBOARD_BASE}/metrics`,    label: 'FastAPI',    port: '8003' },
   { name: 'Prometheus',         url: `${PROMETHEUS_BASE}/-/healthy`,  label: 'Prometheus', port: '9090' },
   { name: 'Grafana',            url: `${GRAFANA_BASE}/api/health`,    label: 'Grafana',    port: '3001' },
 ]
