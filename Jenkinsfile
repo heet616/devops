@@ -8,12 +8,25 @@ pipeline {
                 string(name: 'ALLOWED_SSH_CIDR', defaultValue: '0.0.0.0/0', description: 'CIDR allowed to SSH (Terraform var)')
         }
 
+            environment {
+                TF_BIN = "${WORKSPACE}/.tools/terraform/terraform"
+            }
+
     stages {
+                stage('Install Terraform') {
+                    steps {
+                        sh 'mkdir -p .tools/terraform'
+                        sh 'curl -sSLo .tools/terraform/terraform.zip https://releases.hashicorp.com/terraform/1.9.5/terraform_1.9.5_linux_amd64.zip'
+                        sh 'cd .tools/terraform && jar xf terraform.zip'
+                        sh 'chmod +x .tools/terraform/terraform'
+                    }
+                }
+
                 stage('Provision Infrastructure') {
             steps {
                                 dir('infra') {
-                                        sh 'terraform init'
-                                        sh 'terraform apply -auto-approve -var="key_name=${KEY_NAME}" -var="allowed_ssh_cidr=${ALLOWED_SSH_CIDR}"'
+                            sh '"${TF_BIN}" init'
+                            sh '"${TF_BIN}" apply -auto-approve -var="key_name=${KEY_NAME}" -var="allowed_ssh_cidr=${ALLOWED_SSH_CIDR}"'
                                 }
             }
         }
@@ -21,8 +34,8 @@ pipeline {
                 stage('Deploy App Stack') {
             steps {
                 script {
-                                        def appPublicIp = sh(script: 'cd infra && terraform output -raw app_public_ip', returnStdout: true).trim()
-                                        def monitoringPublicIp = sh(script: 'cd infra && terraform output -raw monitoring_public_ip', returnStdout: true).trim()
+                                        def appPublicIp = sh(script: 'cd infra && "${TF_BIN}" output -raw app_public_ip', returnStdout: true).trim()
+                                        def monitoringPublicIp = sh(script: 'cd infra && "${TF_BIN}" output -raw monitoring_public_ip', returnStdout: true).trim()
 
                                         sh """
                                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY_PATH} ubuntu@${appPublicIp} <<'EOF'
@@ -50,8 +63,8 @@ ENV
                 stage('Deploy Monitoring Stack') {
                         steps {
                                 script {
-                                        def appPrivateIp = sh(script: 'cd infra && terraform output -raw app_private_ip', returnStdout: true).trim()
-                                        def monitoringPublicIp = sh(script: 'cd infra && terraform output -raw monitoring_public_ip', returnStdout: true).trim()
+                            def appPrivateIp = sh(script: 'cd infra && "${TF_BIN}" output -raw app_private_ip', returnStdout: true).trim()
+                            def monitoringPublicIp = sh(script: 'cd infra && "${TF_BIN}" output -raw monitoring_public_ip', returnStdout: true).trim()
 
                                         sh """
                                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY_PATH} ubuntu@${monitoringPublicIp} <<'EOF'
