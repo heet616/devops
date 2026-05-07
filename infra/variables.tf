@@ -33,3 +33,18 @@ variable "instances" {
     }
   }
 }
+
+variable "app_sg_id" {
+  description = "Existing security group ID for app instance"
+  type        = string
+}
+
+variable "monitoring_sg_id" {
+  description = "Existing security group ID for monitoring instance"
+  type        = string
+}
+
+variable "jenkins_sg_id" {
+  description = "Existing security group ID for Jenkins instance"
+  type        = string
+}

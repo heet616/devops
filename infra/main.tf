@@ -38,149 +38,16 @@ data "aws_subnets" "default" {
   }
 }
 
-resource "aws_security_group" "app_sg" {
-  name        = "healthtech-app-sg"
-  description = "App node: frontend + services"
-  vpc_id      = data.aws_vpc.default.id
-
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
-  }
-
-  ingress {
-    description = "Frontend"
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "Ingestion API"
-    from_port   = 8000
-    to_port     = 8000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "Dashboard stream"
-    from_port   = 8003
-    to_port     = 8003
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "healthtech-app-sg"
-  }
+data "aws_security_group" "app_sg" {
+  id = var.app_sg_id
 }
 
-resource "aws_security_group" "monitoring_sg" {
-  name        = "healthtech-monitoring-sg"
-  description = "Monitoring node: Grafana + Prometheus"
-  vpc_id      = data.aws_vpc.default.id
-
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
-  }
-
-  ingress {
-    description = "Grafana"
-    from_port   = 3001
-    to_port     = 3001
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-
-  ingress {
-    description = "Prometheus (admin access)"
-    from_port   = 9090
-    to_port     = 9090
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "healthtech-monitoring-sg"
-  }
+data "aws_security_group" "monitoring_sg" {
+  id = var.monitoring_sg_id
 }
 
-resource "aws_security_group" "jenkins_sg" {
-  name        = "healthtech-jenkins-sg"
-  description = "Jenkins node"
-  vpc_id      = data.aws_vpc.default.id
-
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
-  }
-
-  ingress {
-    description = "Jenkins UI"
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "healthtech-jenkins-sg"
-  }
-}
-
-resource "aws_security_group_rule" "allow_monitoring_to_app" {
-  type                     = "ingress"
-  from_port                = 8000
-  to_port                  = 8003
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.app_sg.id
-  source_security_group_id = aws_security_group.monitoring_sg.id
-  description              = "Service APIs (Prometheus scrape)"
-}
-
-resource "aws_security_group_rule" "allow_app_to_monitoring" {
-  type                     = "ingress"
-  from_port                = 9090
-  to_port                  = 9090
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.monitoring_sg.id
-  source_security_group_id = aws_security_group.app_sg.id
-  description              = "Prometheus (from app)"
+data "aws_security_group" "jenkins_sg" {
+  id = var.jenkins_sg_id
 }
 
 locals {
@@ -214,9 +81,9 @@ locals {
               EOF
 
   sg_by_role = {
-    app        = aws_security_group.app_sg.id
-    monitoring = aws_security_group.monitoring_sg.id
-    jenkins    = aws_security_group.jenkins_sg.id
+    app        = data.aws_security_group.app_sg.id
+    monitoring = data.aws_security_group.monitoring_sg.id
+    jenkins    = data.aws_security_group.jenkins_sg.id
   }
 }
 

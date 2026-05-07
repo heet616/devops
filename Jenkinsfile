@@ -7,6 +7,9 @@ pipeline {
                 string(name: 'KEY_NAME', defaultValue: 'devops_key', description: 'EC2 key pair name (Terraform var)')
                 string(name: 'ALLOWED_SSH_CIDR', defaultValue: '0.0.0.0/0', description: 'CIDR allowed to SSH (Terraform var)')
                 string(name: 'AWS_REGION', defaultValue: 'eu-north-1', description: 'AWS region for Terraform')
+                string(name: 'APP_SG_ID', defaultValue: 'sg-0deab94e46ffaa747', description: 'Existing app security group ID')
+                string(name: 'MONITORING_SG_ID', defaultValue: 'sg-03aba78cf3cb97dd0', description: 'Existing monitoring security group ID')
+                string(name: 'JENKINS_SG_ID', defaultValue: 'sg-0e7f7ed73d7da51ed', description: 'Existing Jenkins security group ID')
         }
 
             environment {
@@ -34,7 +37,7 @@ pipeline {
                 ]) {
                                 dir('infra') {
                             sh '"${TF_BIN}" init'
-                                    sh '"${TF_BIN}" apply -auto-approve -var="key_name=${KEY_NAME}" -var="allowed_ssh_cidr=${ALLOWED_SSH_CIDR}" -var="aws_region=${AWS_REGION}"'
+                                    sh '"${TF_BIN}" apply -auto-approve -var="key_name=${KEY_NAME}" -var="allowed_ssh_cidr=${ALLOWED_SSH_CIDR}" -var="aws_region=${AWS_REGION}" -var="app_sg_id=${APP_SG_ID}" -var="monitoring_sg_id=${MONITORING_SG_ID}" -var="jenkins_sg_id=${JENKINS_SG_ID}"'
                                 }
                 }
             }
