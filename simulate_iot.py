@@ -1,9 +1,37 @@
 import time
 import random
+import os
+import subprocess
+from pathlib import Path
 import requests
 from datetime import datetime, timezone
 
-API_URL = "http://16.171.149.222:8000/api/v1/vitals"
+def resolve_api_url() -> str:
+    # Priority: explicit env var, then Terraform output, then localhost fallback.
+    env_url = os.getenv("SIM_API_URL")
+    if env_url:
+        return env_url
+
+    infra_dir = Path(__file__).resolve().parent / "infra"
+    if infra_dir.exists():
+        try:
+            result = subprocess.run(
+                ["terraform", "output", "-raw", "app_public_ip"],
+                cwd=infra_dir,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            app_ip = result.stdout.strip()
+            if app_ip:
+                return f"http://{app_ip}:8000/api/v1/vitals"
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            pass
+
+    return "http://localhost:8000/api/v1/vitals"
+
+
+API_URL = resolve_api_url()
 
 PATIENTS = ["patient_001", "patient_002", "patient_003"]
 SENSORS = [
