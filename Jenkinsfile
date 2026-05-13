@@ -141,20 +141,7 @@ if [ ! -d devops ]; then
     git clone ${REPO_URL} devops
 fi
 cd devops
-cat > prometheus.yml <<PROM
-global:
-    scrape_interval: 5s
-    evaluation_interval: 5s
-
-scrape_configs:
-    - job_name: 'ingestion-service'
-        static_configs:
-            - targets: ['${appPrivateIp}:8000']
-
-    - job_name: 'analysis-service'
-        static_configs:
-            - targets: ['${appPrivateIp}:8002']
-PROM
+python3 scripts/render_prometheus_config.py --app-ip ${appPrivateIp} --template prometheus.yml --output prometheus.yml
 docker compose -f docker-compose.monitoring.yml up -d --build
 EOF
                                                                                 """

@@ -1,12 +1,12 @@
 global:
-  scrape_interval: 5s 
+  scrape_interval: 5s
   evaluation_interval: 5s
 
 scrape_configs:
   - job_name: 'ingestion-service'
     static_configs:
-      - targets: ['ingestion-service:8000']
+      - targets: ['APP_PRIVATE_IP:8000']
 
   - job_name: 'analysis-service'
     static_configs:
-      - targets: ['analysis-service:8002']
+      - targets: ['APP_PRIVATE_IP:8002']
